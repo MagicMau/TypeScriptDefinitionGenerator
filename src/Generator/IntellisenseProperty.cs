@@ -16,7 +16,15 @@ namespace TypeScriptDefinitionGenerator
 
         public string Name { get; set; }
 
-        public string NameWithOption { get { return (this.Type != null && this.Type.IsOptional) ? this.Name + "?" : this.Name; } }
+        public string NameWithOption
+        {
+            get
+            {
+                if (Type != null && (Type.IsOptional || (Options.OptionalByDefault && !IsRequired)))
+                    return Name + "?";
+                return Name;
+            }
+        }
 
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods",
             Justification = "Unambiguous in this context.")]
@@ -24,5 +32,6 @@ namespace TypeScriptDefinitionGenerator
 
         public string Summary { get; set; }
         public string InitExpression { get; set; }
+        public bool IsRequired { get; set; }
     }
 }

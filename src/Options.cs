@@ -15,6 +15,7 @@ namespace TypeScriptDefinitionGenerator
         internal const bool _defClassInsteadOfInterface = false;
         internal const bool _defGlobalScope = false;
         internal const bool _defWebEssentials2015 = true;
+        internal const bool _defOptionalByDefault = false;
         internal const string _defModuleName = "server";
 
         [Category("Casing")]
@@ -42,6 +43,12 @@ namespace TypeScriptDefinitionGenerator
         [Description("Controls whether to generate a class or an interface: default is an Interface")]
         [DefaultValue(_defClassInsteadOfInterface)]
         public bool ClassInsteadOfInterface { get; set; } = _defClassInsteadOfInterface;
+
+        [Category("Settings")]
+        [DisplayName("Make properties optional by default")]
+        [Description("If checked, all properties are marked optional, unless a [Required] attribute is present")]
+        [DefaultValue(_defOptionalByDefault)]
+        public bool OptionalByDefault { get; set; } = _defOptionalByDefault;
 
         [Category("Settings")]
         [DisplayName("Generate in global scope")]
@@ -114,6 +121,14 @@ namespace TypeScriptDefinitionGenerator
             get
             {
                 return overrides != null ? overrides.WebEssentials2015 : DtsPackage.Options.WebEssentials2015;
+            }
+        }
+
+        static public bool OptionalByDefault
+        {
+            get
+            {
+                return overrides != null ? overrides.OptionalByDefault : DtsPackage.Options.OptionalByDefault;
             }
         }
 
@@ -194,6 +209,7 @@ namespace TypeScriptDefinitionGenerator
         //        [JsonRequired]
         public bool WebEssentials2015 { get; set; } = OptionsDialogPage._defWebEssentials2015;
 
+        public bool OptionalByDefault { get; set; } = OptionsDialogPage._defOptionalByDefault;
     }
 
 }

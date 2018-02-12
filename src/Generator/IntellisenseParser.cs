@@ -176,7 +176,8 @@ namespace TypeScriptDefinitionGenerator
                    {
                        Name = GetName(p),
                        Type = GetType(p.Parent, p.Type, traversedTypes, references),
-                       Summary = GetSummary(p)
+                       Summary = GetSummary(p),
+                       IsRequired = p.Attributes.Cast<CodeAttribute>().Any(HasRequiredAttribute)
                    };
         }
 
@@ -185,6 +186,13 @@ namespace TypeScriptDefinitionGenerator
             return attribute.FullName == "System.Runtime.Serialization.IgnoreDataMemberAttribute" ||
                    attribute.FullName == "Newtonsoft.Json.JsonIgnoreAttribute" ||
                    attribute.FullName == "System.Web.Script.Serialization.ScriptIgnoreAttribute";
+        }
+
+
+        private static bool HasRequiredAttribute(CodeAttribute attribute)
+        {
+            return attribute.FullName == "System.ComponentModel.DataAnnotations.RequiredAttribute" ||
+                   attribute.FullName == "Newtonsoft.Json.JsonRequiredAttribute";
         }
 
         private static bool IsPublic(CodeFunction cf)
