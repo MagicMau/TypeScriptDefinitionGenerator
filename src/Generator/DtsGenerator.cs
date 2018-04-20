@@ -30,14 +30,27 @@ namespace TypeScriptDefinitionGenerator
         protected override byte[] GenerateCode(string inputFileName, string inputFileContent)
         {
             ProjectItem item = Dte.Solution.FindProjectItem(inputFileName);
-            this.originalExt = Path.GetExtension(inputFileName);
+            originalExt = Path.GetExtension(inputFileName);
             if (item != null)
             {
                 try
                 {
-                    string dts = GenerationService.ConvertToTypeScript(item).Item1;
+                    var output = GenerationService.ConvertToTypeScript(item);
+                    string dts = output.Item1;
 
                     Telemetry.TrackOperation("FileGenerated");
+
+                    if (Options.EmitEnumsAsModule)
+                    {
+                        string nodeModule = output.Item2;
+                        if (!string.IsNullOrEmpty(nodeModule))
+                        {
+                            string nodeModuleFile = Path.ChangeExtension(inputFileName, ".ts");
+                            VSHelpers.CheckFileOutOfSourceControl(nodeModuleFile);
+                            File.WriteAllText(nodeModuleFile, nodeModule);
+                            item.ProjectItems.AddFromFile(nodeModuleFile);
+                        }
+                    }
 
                     return Encoding.UTF8.GetBytes(dts);
                 }

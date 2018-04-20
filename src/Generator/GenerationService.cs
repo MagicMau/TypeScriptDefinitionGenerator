@@ -87,12 +87,12 @@ namespace TypeScriptDefinitionGenerator
             var output = ConvertToTypeScript(sourceItem);
 
             string dts = output.Item1;
-            string nodeModule = output.Item2;
 
             WriteTypescriptToFile(dts, dtsFile, sourceItem);
 
             if (Options.EmitEnumsAsModule)
             {
+                string nodeModule = output.Item2;
                 string nodeModuleFile = Path.ChangeExtension(sourceFile, ".ts");
                 WriteTypescriptToFile(nodeModule, nodeModuleFile, sourceItem);
             }
@@ -104,12 +104,14 @@ namespace TypeScriptDefinitionGenerator
             {
                 VSHelpers.CheckFileOutOfSourceControl(typescriptFilename);
                 File.WriteAllText(typescriptFilename, contents);
+                VSHelpers.WriteOnOutputWindow($"Written: {typescriptFilename}");
             }
             else
             {
                 try
                 {
                     File.Delete(typescriptFilename);
+                    VSHelpers.WriteOnOutputWindow($"Deleted (no content): {typescriptFilename}");
                 }
                 catch { }
             }

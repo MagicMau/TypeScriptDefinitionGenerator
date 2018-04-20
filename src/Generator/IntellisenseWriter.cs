@@ -31,7 +31,7 @@ namespace TypeScriptDefinitionGenerator
                     if (io.IsEnum)
                     {
                         sb.AppendLine("\tconst enum " + Utility.CamelCaseClassName(io.Name) + " {");
-                        sbEnums.AppendLine("export const enum " + Utility.CamelCaseClassName(io.Name) + " {");
+                        sbEnums.AppendLine("export const enum " + io.Name + " {");
 
                         foreach (var p in io.Properties)
                         {
