@@ -35,7 +35,7 @@ namespace TypeScriptDefinitionGenerator
             {
                 try
                 {
-                    string dts = GenerationService.ConvertToTypeScript(item);
+                    string dts = GenerationService.ConvertToTypeScript(item).Item1;
 
                     Telemetry.TrackOperation("FileGenerated");
 

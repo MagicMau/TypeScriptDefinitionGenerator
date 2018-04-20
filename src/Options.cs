@@ -16,6 +16,7 @@ namespace TypeScriptDefinitionGenerator
         internal const bool _defGlobalScope = false;
         internal const bool _defWebEssentials2015 = true;
         internal const bool _defOptionalByDefault = false;
+        internal const bool _defEmitEnumsAsModule = false;
         internal const string _defModuleName = "server";
 
         [Category("Casing")]
@@ -51,11 +52,16 @@ namespace TypeScriptDefinitionGenerator
         public bool OptionalByDefault { get; set; } = _defOptionalByDefault;
 
         [Category("Settings")]
+        [DisplayName("Generate Node modules for enums")]
+        [Description("If checked, all enums are emitted as a separate .ts file to be consumed as a Node module")]
+        [DefaultValue(_defEmitEnumsAsModule)]
+        public bool EmitEnumsAsModule { get; set; } = _defEmitEnumsAsModule;
+
+        [Category("Settings")]
         [DisplayName("Generate in global scope")]
         [Description("Controls whether to generate types in Global scope or wrapped in a module")]
         [DefaultValue(_defGlobalScope)]
         public bool GlobalScope { get; set; } = _defGlobalScope;
-
 
         [Category("Compatibilty")]
         [DisplayName("Web Esentials 2015 file names")]
@@ -129,6 +135,14 @@ namespace TypeScriptDefinitionGenerator
             get
             {
                 return overrides != null ? overrides.OptionalByDefault : DtsPackage.Options.OptionalByDefault;
+            }
+        }
+
+        static public bool EmitEnumsAsModule
+        {
+            get
+            {
+                return overrides != null ? overrides.EmitEnumsAsModule : DtsPackage.Options.EmitEnumsAsModule;
             }
         }
 
@@ -210,6 +224,8 @@ namespace TypeScriptDefinitionGenerator
         public bool WebEssentials2015 { get; set; } = OptionsDialogPage._defWebEssentials2015;
 
         public bool OptionalByDefault { get; set; } = OptionsDialogPage._defOptionalByDefault;
+
+        public bool EmitEnumsAsModule { get; set; } = OptionsDialogPage._defEmitEnumsAsModule;
     }
 
 }

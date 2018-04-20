@@ -49,7 +49,7 @@ namespace TypeScriptDefinitionGenerator
             }
         }
 
-        public static string ConvertToTypeScript(ProjectItem sourceItem)
+        public static Tuple<string, string> ConvertToTypeScript(ProjectItem sourceItem)
         {
             try
             {
@@ -83,27 +83,63 @@ namespace TypeScriptDefinitionGenerator
         {
             string sourceFile = sourceItem.FileNames[1];
             string dtsFile = GenerationService.GenerateFileName(sourceFile);
-            string dts = ConvertToTypeScript(sourceItem);
 
-            VSHelpers.CheckFileOutOfSourceControl(dtsFile);
-            File.WriteAllText(dtsFile, dts);
+            var output = ConvertToTypeScript(sourceItem);
+
+            string dts = output.Item1;
+            string nodeModule = output.Item2;
+
+            WriteTypescriptToFile(dts, dtsFile, sourceItem);
+
+            if (Options.EmitEnumsAsModule)
+            {
+                string nodeModuleFile = Path.ChangeExtension(sourceFile, ".ts");
+                WriteTypescriptToFile(nodeModule, nodeModuleFile, sourceItem);
+            }
+        }
+
+        private static void WriteTypescriptToFile(string contents, string typescriptFilename, ProjectItem sourceItem)
+        {
+            if (!string.IsNullOrEmpty(contents))
+            {
+                VSHelpers.CheckFileOutOfSourceControl(typescriptFilename);
+                File.WriteAllText(typescriptFilename, contents);
+            }
+            else
+            {
+                try
+                {
+                    File.Delete(typescriptFilename);
+                }
+                catch { }
+            }
 
             if (sourceItem.ContainingProject.IsKind(ProjectTypes.DOTNET_Core, ProjectTypes.ASPNET_5))
             {
                 Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
                 {
-                    var dtsItem = VSHelpers.GetProjectItem(dtsFile);
+                    var dtsItem = VSHelpers.GetProjectItem(typescriptFilename);
 
-                    if (dtsItem != null)
-                        dtsItem.Properties.Item("DependentUpon").Value = sourceItem.Name;
+                    if (!string.IsNullOrEmpty(contents))
+                    {
+                        if (dtsItem != null)
+                            dtsItem.Properties.Item("DependentUpon").Value = sourceItem.Name;
 
-                    Telemetry.TrackOperation("FileGenerated");
+                        Telemetry.TrackOperation("FileGenerated");
+                    }
+                    else
+                    {
+                        dtsItem.Delete();
+                        Telemetry.TrackOperation("FileDeleted");
+                    }
+
                 }), DispatcherPriority.ApplicationIdle, null);
             }
-            else if (sourceItem.ContainingProject.IsKind(ProjectTypes.WEBSITE_PROJECT))
+            else if (sourceItem.ContainingProject.IsKind(ProjectTypes.WEBSITE_PROJECT) && !string.IsNullOrEmpty(contents))
             {
-                sourceItem.ContainingProject.ProjectItems.AddFromFile(dtsFile);
+                sourceItem.ContainingProject.ProjectItems.AddFromFile(typescriptFilename);
             }
+
         }
     }
 }

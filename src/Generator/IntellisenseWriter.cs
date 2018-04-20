@@ -11,9 +11,10 @@ namespace TypeScriptDefinitionGenerator
     {
         private static readonly Regex _whitespaceTrimmer = new Regex(@"^\s+|\s+$|\s*[\r\n]+\s*", RegexOptions.Compiled);
 
-        public static string WriteTypeScript(IEnumerable<IntellisenseObject> objects)
+        public static Tuple<string, string> WriteTypeScript(IEnumerable<IntellisenseObject> objects)
         {
             var sb = new StringBuilder();
+            var sbEnums = new StringBuilder();
 
             foreach (var ns in objects.GroupBy(o => o.Namespace))
             {
@@ -30,22 +31,29 @@ namespace TypeScriptDefinitionGenerator
                     if (io.IsEnum)
                     {
                         sb.AppendLine("\tconst enum " + Utility.CamelCaseClassName(io.Name) + " {");
+                        sbEnums.AppendLine("export const enum " + Utility.CamelCaseClassName(io.Name) + " {");
 
                         foreach (var p in io.Properties)
                         {
                             WriteTypeScriptComment(p, sb);
+                            WriteTypeScriptComment(p, sbEnums);
 
                             if (p.InitExpression != null)
                             {
                                 sb.AppendLine("\t\t" + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
+                                sbEnums.AppendLine("\t" + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
                             }
                             else
                             {
                                 sb.AppendLine("\t\t" + Utility.CamelCaseEnumValue(p.Name) + ",");
+                                sbEnums.AppendLine("\t" + Utility.CamelCaseEnumValue(p.Name) + ",");
                             }
                         }
 
                         sb.AppendLine("\t}");
+                        sbEnums.AppendLine("}");
+
+                        
                     }
                     else
                     {
@@ -73,7 +81,7 @@ namespace TypeScriptDefinitionGenerator
                 }
             }
 
-            return sb.ToString();
+            return Tuple.Create(sb.ToString(), sbEnums.ToString());
         }
 
         private static string CleanEnumInitValue(string value)
