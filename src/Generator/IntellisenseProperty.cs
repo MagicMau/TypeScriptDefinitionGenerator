@@ -20,7 +20,7 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                if (Type != null && (Type.IsOptional || (Options.OptionalByDefault && !IsRequired)))
+                if (Type != null && (Type.IsOptional || (Options.OptionalByDefault && !IsRequired && Type.IsNullable)))
                     return Name + "?";
                 return Name;
             }

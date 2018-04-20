@@ -37,6 +37,35 @@ namespace TypeScriptDefinitionGenerator
         {
             get { return TypeScriptName != "any"; }
         }
+
+        public bool IsNullable
+        {
+            get
+            {
+                if (CodeName.EndsWith("?"))
+                    return true;
+
+                var t = CodeName.ToLowerInvariant().TrimEnd('?');
+                switch (t)
+                {
+                    case "int16":
+                    case "int32":
+                    case "int64":
+                    case "short":
+                    case "int":
+                    case "long":
+                    case "float":
+                    case "double":
+                    case "decimal":
+                    case "biginteger":
+                    case "bool":
+                    case "boolean":
+                        return false;
+                    default:
+                        return true;
+                }
+            }
+        }
         
         public string TypeScriptName
         {
