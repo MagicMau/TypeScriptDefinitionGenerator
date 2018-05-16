@@ -46,9 +46,15 @@ namespace TypeScriptDefinitionGenerator
                         if (!string.IsNullOrEmpty(nodeModule))
                         {
                             string nodeModuleFile = Path.ChangeExtension(inputFileName, ".ts");
+                            if (!string.IsNullOrEmpty(Options.NodeModulePath))
+                            {
+                                string projectPath = Path.GetDirectoryName(item.ContainingProject.FileName);
+                                nodeModuleFile = nodeModuleFile.Substring(projectPath.Length + 1); // strip the initial part of the path
+                                nodeModuleFile = Path.Combine(projectPath, Options.NodeModulePath, nodeModuleFile);
+                                Directory.CreateDirectory(Path.GetDirectoryName(nodeModuleFile));
+                            }
                             VSHelpers.CheckFileOutOfSourceControl(nodeModuleFile);
                             File.WriteAllText(nodeModuleFile, nodeModule);
-                            item.ProjectItems.AddFromFile(nodeModuleFile);
                         }
                     }
 

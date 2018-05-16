@@ -11,13 +11,14 @@ namespace TypeScriptDefinitionGenerator
     {
         internal const bool _defCamelCaseEnumerationValues = true;
         internal const bool _defCamelCasePropertyNames = true;
-        internal const bool _defCamelCaseTypeNames = true;
+        internal const bool _defCamelCaseTypeNames = false;
         internal const bool _defClassInsteadOfInterface = false;
         internal const bool _defGlobalScope = false;
         internal const bool _defWebEssentials2015 = true;
         internal const bool _defOptionalByDefault = false;
         internal const bool _defEmitEnumsAsModule = false;
         internal const string _defModuleName = "server";
+        internal const string _defNodeModulePath = "";
 
         [Category("Casing")]
         [DisplayName("Camel case enum values")]
@@ -56,6 +57,12 @@ namespace TypeScriptDefinitionGenerator
         [Description("If checked, all enums are emitted as a separate .ts file to be consumed as a Node module")]
         [DefaultValue(_defEmitEnumsAsModule)]
         public bool EmitEnumsAsModule { get; set; } = _defEmitEnumsAsModule;
+
+        [Category("Settings")]
+        [DisplayName("Path (relative to project base) to place generated Node module files")]
+        [Description("Node modules often need to be in a specific location to be imported.")]
+        [DefaultValue(_defNodeModulePath)]
+        public string NodeModulePath { get; set; } = _defNodeModulePath;
 
         [Category("Settings")]
         [DisplayName("Generate in global scope")]
@@ -146,6 +153,8 @@ namespace TypeScriptDefinitionGenerator
             }
         }
 
+        static public string NodeModulePath => overrides?.NodeModulePath ?? DtsPackage.Options.NodeModulePath;
+
         public static void ReadOptionOverrides(ProjectItem sourceItem, bool display = true)
         {
             Project proj = sourceItem.ContainingProject;
@@ -226,6 +235,8 @@ namespace TypeScriptDefinitionGenerator
         public bool OptionalByDefault { get; set; } = OptionsDialogPage._defOptionalByDefault;
 
         public bool EmitEnumsAsModule { get; set; } = OptionsDialogPage._defEmitEnumsAsModule;
+
+        public string NodeModulePath { get; set; } = OptionsDialogPage._defNodeModulePath;
     }
 
 }

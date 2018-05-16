@@ -41,19 +41,17 @@ namespace TypeScriptDefinitionGenerator
                             if (p.InitExpression != null)
                             {
                                 sb.AppendLine("\t\t" + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
-                                sbEnums.AppendLine("\t" + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
+                                sbEnums.AppendLine("    " + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
                             }
                             else
                             {
                                 sb.AppendLine("\t\t" + Utility.CamelCaseEnumValue(p.Name) + ",");
-                                sbEnums.AppendLine("\t" + Utility.CamelCaseEnumValue(p.Name) + ",");
+                                sbEnums.AppendLine("    " + Utility.CamelCaseEnumValue(p.Name) + ",");
                             }
                         }
 
                         sb.AppendLine("\t}");
                         sbEnums.AppendLine("}");
-
-                        
                     }
                     else
                     {
