@@ -11,75 +11,90 @@ namespace TypeScriptDefinitionGenerator
     {
         private static readonly Regex _whitespaceTrimmer = new Regex(@"^\s+|\s+$|\s*[\r\n]+\s*", RegexOptions.Compiled);
 
-        public static Tuple<string, string> WriteTypeScript(IEnumerable<IntellisenseObject> objects)
+        public static string WriteTypeScript(IEnumerable<IntellisenseObject> objects)
         {
             var sb = new StringBuilder();
-            var sbEnums = new StringBuilder();
+            var imports = new HashSet<string>();
+            var locallyDefined = new HashSet<string>();
+            bool isNodeModule = !string.IsNullOrWhiteSpace(Options.NodeModulePath);
+
+            string indent = "";
 
             foreach (var ns in objects.GroupBy(o => o.Namespace))
             {
-                if (!Options.GlobalScope)
+                if (!Options.GlobalScope && !isNodeModule)
                 {
                     sb.AppendFormat("declare module {0} {{\r\n", ns.Key);
+                    indent = "    ";
                 }
 
                 foreach (IntellisenseObject io in ns)
                 {
                     if (!string.IsNullOrEmpty(io.Summary))
-                        sb.AppendLine("\t/** " + _whitespaceTrimmer.Replace(io.Summary, "") + " */");
+                        sb.AppendLine(indent + "/** " + _whitespaceTrimmer.Replace(io.Summary, "") + " */");
+
+                    string name = Utility.CamelCaseClassName(io.Name);
+                    locallyDefined.Add(name);
 
                     if (io.IsEnum)
                     {
-                        sb.AppendLine("\tconst enum " + Utility.CamelCaseClassName(io.Name) + " {");
-                        sbEnums.AppendLine("export const enum " + io.Name + " {");
+                        sb.AppendLine(indent + (isNodeModule ? "export " : "") + "const enum " + name + " {");
 
+                        string ind = indent + "    ";
                         foreach (var p in io.Properties)
                         {
                             WriteTypeScriptComment(p, sb);
-                            WriteTypeScriptComment(p, sbEnums);
 
                             if (p.InitExpression != null)
                             {
-                                sb.AppendLine("\t\t" + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
-                                sbEnums.AppendLine("    " + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
+                                sb.AppendLine(ind + Utility.CamelCaseEnumValue(p.Name) + " = " + CleanEnumInitValue(p.InitExpression) + ",");
                             }
                             else
                             {
-                                sb.AppendLine("\t\t" + Utility.CamelCaseEnumValue(p.Name) + ",");
-                                sbEnums.AppendLine("    " + Utility.CamelCaseEnumValue(p.Name) + ",");
+                                sb.AppendLine(ind + Utility.CamelCaseEnumValue(p.Name) + ",");
                             }
                         }
 
-                        sb.AppendLine("\t}");
-                        sbEnums.AppendLine("}");
+                        sb.AppendLine(indent + "}");
                     }
                     else
                     {
-                        string type = Options.ClassInsteadOfInterface ? "\tclass " : "\tinterface ";
-                        sb.Append(type).Append(Utility.CamelCaseClassName(io.Name)).Append(" ");
+                        string pre = indent + (isNodeModule ? "export " : "");
+                        string type = Options.ClassInsteadOfInterface ? pre + "class " : pre + "interface ";
+                        
+                        sb.Append(type).Append(name).Append(" ");
 
                         if (!string.IsNullOrEmpty(io.BaseName))
                         {
                             sb.Append("extends ");
 
-                            if (!string.IsNullOrEmpty(io.BaseNamespace) && io.BaseNamespace != io.Namespace)
+                            if (!isNodeModule && !string.IsNullOrEmpty(io.BaseNamespace) && io.BaseNamespace != io.Namespace)
                                 sb.Append(io.BaseNamespace).Append(".");
 
                             sb.Append(Utility.CamelCaseClassName(io.BaseName)).Append(" ");
                         }
 
-                        WriteTSInterfaceDefinition(sb, "\t", io.Properties);
+                        WriteTSInterfaceDefinition(sb, imports, locallyDefined, indent + "", io.Properties);
                         sb.AppendLine();
                     }
                 }
 
-                if (!Options.GlobalScope)
+                if (!Options.GlobalScope && !isNodeModule)
                 {
                     sb.AppendLine("}");
                 }
             }
 
-            return Tuple.Create(sb.ToString(), sbEnums.ToString());
+            var sbImports = new StringBuilder();
+            foreach (var import in imports.OrderBy(x => x))
+            {
+                sbImports.AppendLine(import);
+            }
+
+            if (sbImports.Length > 0)
+                sbImports.AppendLine();
+
+            return sbImports.ToString() + sb.ToString();
         }
 
         private static string CleanEnumInitValue(string value)
@@ -95,24 +110,32 @@ namespace TypeScriptDefinitionGenerator
         private static void WriteTypeScriptComment(IntellisenseProperty p, StringBuilder sb)
         {
             if (string.IsNullOrEmpty(p.Summary)) return;
-            sb.AppendLine("\t\t/** " + _whitespaceTrimmer.Replace(p.Summary, "") + " */");
+            sb.AppendLine("        /** " + _whitespaceTrimmer.Replace(p.Summary, "") + " */");
         }
 
-        private static void WriteTSInterfaceDefinition(StringBuilder sb, string prefix,
-            IEnumerable<IntellisenseProperty> props)
+        private static void WriteTSInterfaceDefinition(StringBuilder sb, HashSet<string> imports, HashSet<string> locallyDefined, 
+            string prefix, IEnumerable<IntellisenseProperty> props)
         {
             sb.AppendLine("{");
 
             foreach (var p in props)
             {
                 WriteTypeScriptComment(p, sb);
-                sb.AppendFormat("{0}\t{1}: ", prefix, Utility.CamelCasePropertyName(p.NameWithOption));
+                sb.AppendFormat("{0}    {1}: ", prefix, Utility.CamelCasePropertyName(p.NameWithOption));
 
-                if (p.Type.IsKnownType) sb.Append(p.Type.TypeScriptName);
+                if (p.Type.IsKnownType)
+                {
+                    string typeScriptName = p.Type.TypeScriptName;
+                    sb.Append(typeScriptName);
+                    if (!string.IsNullOrWhiteSpace(Options.NodeModulePath) && !p.Type.IsSimpleType && !locallyDefined.Contains(typeScriptName))
+                    {
+                        imports.Add($"import {{ {typeScriptName} }} from './{typeScriptName}';");
+                    }
+                }
                 else
                 {
                     if (p.Type.Shape == null) sb.Append("any");
-                    else WriteTSInterfaceDefinition(sb, prefix + "\t", p.Type.Shape);
+                    else WriteTSInterfaceDefinition(sb, imports, locallyDefined, prefix + "    ", p.Type.Shape);
                 }
                 if (p.Type.IsArray) sb.Append("[]");
 

@@ -109,6 +109,22 @@ namespace TypeScriptDefinitionGenerator
             return js ? "Object" : GetComplexTypeScriptName();
         }
 
+        public bool IsSimpleType
+        {
+            get
+            {
+                switch (GetTargetName(CodeName, false))
+                {
+                    case "number":
+                    case "string":
+                    case "Date":
+                    case "boolean":
+                        return true;
+                }
+                return false;
+            }
+        }
+
         private string GetComplexTypeScriptName()
         {
             return ClientSideReferenceName ?? "any";

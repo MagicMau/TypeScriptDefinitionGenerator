@@ -15,8 +15,6 @@ namespace TypeScriptDefinitionGenerator
         internal const bool _defClassInsteadOfInterface = false;
         internal const bool _defGlobalScope = false;
         internal const bool _defWebEssentials2015 = true;
-        internal const bool _defOptionalByDefault = false;
-        internal const bool _defEmitEnumsAsModule = false;
         internal const string _defModuleName = "server";
         internal const string _defNodeModulePath = "";
 
@@ -45,22 +43,10 @@ namespace TypeScriptDefinitionGenerator
         [Description("Controls whether to generate a class or an interface: default is an Interface")]
         [DefaultValue(_defClassInsteadOfInterface)]
         public bool ClassInsteadOfInterface { get; set; } = _defClassInsteadOfInterface;
-
+        
         [Category("Settings")]
-        [DisplayName("Make properties optional by default")]
-        [Description("If checked, all properties are marked optional, unless a [Required] attribute is present")]
-        [DefaultValue(_defOptionalByDefault)]
-        public bool OptionalByDefault { get; set; } = _defOptionalByDefault;
-
-        [Category("Settings")]
-        [DisplayName("Generate Node modules for enums")]
-        [Description("If checked, all enums are emitted as a separate .ts file to be consumed as a Node module")]
-        [DefaultValue(_defEmitEnumsAsModule)]
-        public bool EmitEnumsAsModule { get; set; } = _defEmitEnumsAsModule;
-
-        [Category("Settings")]
-        [DisplayName("Path (relative to project base) to place generated Node module files")]
-        [Description("Node modules often need to be in a specific location to be imported.")]
+        [DisplayName("Path (relative to project base) to generate Node module files")]
+        [Description("When this option is set, Node modules are generated instead of d.ts files. Node modules often need to be in a specific location to be imported.")]
         [DefaultValue(_defNodeModulePath)]
         public string NodeModulePath { get; set; } = _defNodeModulePath;
 
@@ -80,12 +66,13 @@ namespace TypeScriptDefinitionGenerator
     public class Options
     {
         const string OVERRIDE_FILE_NAME = "tsdefgen.json";
-        static OptionsOverride overrides { get; set; } = null;
+        static OptionsOverride Overrides { get; set; } = null;
+
         static public bool CamelCaseEnumerationValues
         {
             get
             {
-                return overrides != null ? overrides.CamelCaseEnumerationValues : DtsPackage.Options.CamelCaseEnumerationValues;
+                return Overrides != null ? Overrides.CamelCaseEnumerationValues : DtsPackage.Options.CamelCaseEnumerationValues;
             }
         }
 
@@ -93,7 +80,7 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                return overrides != null ? overrides.CamelCasePropertyNames : DtsPackage.Options.CamelCasePropertyNames;
+                return Overrides != null ? Overrides.CamelCasePropertyNames : DtsPackage.Options.CamelCasePropertyNames;
             }
         }
 
@@ -101,7 +88,7 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                return overrides != null ? overrides.CamelCaseTypeNames : DtsPackage.Options.CamelCaseTypeNames;
+                return Overrides != null ? Overrides.CamelCaseTypeNames : DtsPackage.Options.CamelCaseTypeNames;
             }
         }
 
@@ -109,7 +96,7 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                return overrides != null ? overrides.DefaultModuleName : DtsPackage.Options.DefaultModuleName;
+                return Overrides != null ? Overrides.DefaultModuleName : DtsPackage.Options.DefaultModuleName;
             }
         }
 
@@ -117,7 +104,7 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                return overrides != null ? overrides.ClassInsteadOfInterface : DtsPackage.Options.ClassInsteadOfInterface;
+                return Overrides != null ? Overrides.ClassInsteadOfInterface : DtsPackage.Options.ClassInsteadOfInterface;
             }
         }
 
@@ -125,7 +112,7 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                return overrides != null ? overrides.GlobalScope : DtsPackage.Options.GlobalScope;
+                return Overrides != null ? Overrides.GlobalScope : DtsPackage.Options.GlobalScope;
             }
         }
 
@@ -133,27 +120,11 @@ namespace TypeScriptDefinitionGenerator
         {
             get
             {
-                return overrides != null ? overrides.WebEssentials2015 : DtsPackage.Options.WebEssentials2015;
+                return Overrides != null ? Overrides.WebEssentials2015 : DtsPackage.Options.WebEssentials2015;
             }
         }
 
-        static public bool OptionalByDefault
-        {
-            get
-            {
-                return overrides != null ? overrides.OptionalByDefault : DtsPackage.Options.OptionalByDefault;
-            }
-        }
-
-        static public bool EmitEnumsAsModule
-        {
-            get
-            {
-                return overrides != null ? overrides.EmitEnumsAsModule : DtsPackage.Options.EmitEnumsAsModule;
-            }
-        }
-
-        static public string NodeModulePath => overrides?.NodeModulePath ?? DtsPackage.Options.NodeModulePath;
+        static public string NodeModulePath => Overrides?.NodeModulePath ?? DtsPackage.Options.NodeModulePath;
 
         public static void ReadOptionOverrides(ProjectItem sourceItem, bool display = true)
         {
@@ -175,7 +146,7 @@ namespace TypeScriptDefinitionGenerator
                 // it has been modified since last read - so read again
                 try
                 {
-                    overrides = JsonConvert.DeserializeObject<OptionsOverride>(File.ReadAllText(jsonName));
+                    Overrides = JsonConvert.DeserializeObject<OptionsOverride>(File.ReadAllText(jsonName));
                     if (display)
                     {
                         VSHelpers.WriteOnOutputWindow(string.Format("Override file processed: {0}", jsonName));
@@ -187,7 +158,7 @@ namespace TypeScriptDefinitionGenerator
                 }
                 catch (Exception e) when (e is Newtonsoft.Json.JsonReaderException || e is Newtonsoft.Json.JsonSerializationException)
                 {
-                    overrides = null; // incase the read fails
+                    Overrides = null; // incase the read fails
                     VSHelpers.WriteOnOutputWindow(string.Format("Error in Override file: {0}", jsonName));
                     VSHelpers.WriteOnOutputWindow(e.Message);
                     throw;
@@ -203,7 +174,7 @@ namespace TypeScriptDefinitionGenerator
                 {
                     System.Diagnostics.Debug.WriteLine("Using Global Settings");
                 }
-                overrides = null;
+                Overrides = null;
             }
         }
 
@@ -231,10 +202,6 @@ namespace TypeScriptDefinitionGenerator
 
         //        [JsonRequired]
         public bool WebEssentials2015 { get; set; } = OptionsDialogPage._defWebEssentials2015;
-
-        public bool OptionalByDefault { get; set; } = OptionsDialogPage._defOptionalByDefault;
-
-        public bool EmitEnumsAsModule { get; set; } = OptionsDialogPage._defEmitEnumsAsModule;
 
         public string NodeModulePath { get; set; } = OptionsDialogPage._defNodeModulePath;
     }

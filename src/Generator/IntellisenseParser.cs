@@ -247,6 +247,9 @@ namespace TypeScriptDefinitionGenerator
 
         private static string GetNamespace(CodeElements attrs)
         {
+            if (!string.IsNullOrWhiteSpace(Options.NodeModulePath))
+                return "";
+
             if (attrs == null) return DefaultModuleName;
 
             var namespaceFromAttr = from a in attrs.Cast<CodeAttribute2>()
@@ -287,15 +290,27 @@ namespace TypeScriptDefinitionGenerator
                 {
                     IsArray = !isDictionary && (isArray || isCollection),
                     IsDictionary = isDictionary,
-                    CodeName = effectiveTypeRef.AsString,
-                    ClientSideReferenceName =
-                        effectiveTypeRef.TypeKind == vsCMTypeRef.vsCMTypeRefCodeType &&
-                        effectiveTypeRef.CodeType.InfoLocation == vsCMInfoLocation.vsCMInfoLocationProject
-                        ?
-                            (codeClass != null && HasIntellisense(codeClass.ProjectItem, references) ? (GetNamespace(codeClass) + "." + Utility.CamelCaseClassName(GetClassName(codeClass))) : null) ??
-                            (codeEnum != null && HasIntellisense(codeEnum.ProjectItem, references) ? (GetNamespace(codeEnum) + "." + Utility.CamelCaseClassName(codeEnum.Name)) : null)
-                        : null
+                    CodeName = effectiveTypeRef.AsString
                 };
+
+                if (effectiveTypeRef.TypeKind == vsCMTypeRef.vsCMTypeRefCodeType &&
+                    effectiveTypeRef.CodeType.InfoLocation == vsCMInfoLocation.vsCMInfoLocationProject)
+                {
+                    if (codeClass != null && HasIntellisense(codeClass.ProjectItem, references))
+                    {
+                        string ns = GetNamespace(codeClass);
+                        if (!string.IsNullOrEmpty(ns))
+                            ns += ".";
+                        result.ClientSideReferenceName = ns + Utility.CamelCaseClassName(GetClassName(codeClass));
+                    }
+                    else if (codeEnum != null && HasIntellisense(codeEnum.ProjectItem, references))
+                    {
+                        string ns = GetNamespace(codeEnum);
+                        if (!string.IsNullOrEmpty(ns))
+                            ns += ".";
+                        result.ClientSideReferenceName = ns + Utility.CamelCaseClassName(codeEnum.Name);
+                    }
+                }
 
                 if (!isPrimitive && codeClass != null && !traversedTypes.Contains(effectiveTypeRef.CodeType.FullName) && !isCollection)
                 {

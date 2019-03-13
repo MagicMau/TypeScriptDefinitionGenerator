@@ -49,7 +49,7 @@ namespace TypeScriptDefinitionGenerator
             }
         }
 
-        public static Tuple<string, string> ConvertToTypeScript(ProjectItem sourceItem)
+        public static string ConvertToTypeScript(ProjectItem sourceItem)
         {
             try
             {
@@ -86,15 +86,14 @@ namespace TypeScriptDefinitionGenerator
 
             var output = ConvertToTypeScript(sourceItem);
 
-            string dts = output.Item1;
-
-            WriteTypescriptToFile(dts, dtsFile, sourceItem);
-
-            if (Options.EmitEnumsAsModule)
+            if (string.IsNullOrWhiteSpace(Options.NodeModulePath))
             {
-                string nodeModule = output.Item2;
+                WriteTypescriptToFile(output, dtsFile, sourceItem);
+            }
+            else
+            {
                 string nodeModuleFile = Path.ChangeExtension(sourceFile, ".ts");
-                WriteTypescriptToFile(nodeModule, nodeModuleFile, sourceItem);
+                WriteTypescriptToFile(output, nodeModuleFile, sourceItem);
             }
         }
 
